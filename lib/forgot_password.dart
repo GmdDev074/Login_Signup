@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class MyForgotPassword extends StatefulWidget {
   const MyForgotPassword({super.key});
@@ -8,6 +9,7 @@ class MyForgotPassword extends StatefulWidget {
 }
 
 class _MyForgotPasswordState extends State<MyForgotPassword> {
+  final _controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -41,24 +43,49 @@ class _MyForgotPasswordState extends State<MyForgotPassword> {
               child: Column(
                 children: [
                   TextField(
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false, // Disables auto-correction
+                    enableSuggestions: false,
+                    inputFormatters: [
+                      LengthLimitingTextInputFormatter(25), // Max length of 25
+                      FilteringTextInputFormatter.deny(RegExp(r'\s')), // Deny spaces in email
+                    ],
                     decoration: InputDecoration(
-                        hintText: 'Email',
-                        fillColor: Colors.green.shade100,
-                        filled: true,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10))),
+                      hintText: 'Email',
+                      fillColor: Colors.green.shade100,
+                      filled: true,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      labelText: "Email",
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    ),
+                    // Optional: Check email format in onChanged or onSubmitted
+                    onChanged: (value) {
+                      // You can add further email format validation here if needed
+                      if (!RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value)) {
+                        // Show error or handle invalid email format
+                      }
+                    },
                   ),
                   SizedBox(
                       height: 30
                   ),
                   TextField(
                     obscureText: true,
+                    keyboardType: TextInputType.text,
+                    autocorrect: false, // Disables auto-correction
+                    enableSuggestions: false,
                     decoration: InputDecoration(
                         hintText: 'Password',
                         fillColor: Colors.green.shade100,
                         filled: true,
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10))),
+                            borderRadius: BorderRadius.circular(10)
+                        ),
+                      labelText: "Password",
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    ),
                   ),
 
                   SizedBox(
