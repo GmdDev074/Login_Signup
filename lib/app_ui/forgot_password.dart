@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class MyRegister extends StatefulWidget {
-  const MyRegister({super.key});
+class MyForgotPassword extends StatefulWidget {
+  const MyForgotPassword({super.key});
 
   @override
-  State<MyRegister> createState() => _MyRegisterState();
+  State<MyForgotPassword> createState() => _MyForgotPasswordState();
 }
 
-class _MyRegisterState extends State<MyRegister> {
+class _MyForgotPasswordState extends State<MyForgotPassword> {
   final _controller = TextEditingController();
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
           image: DecorationImage(
-              image: AssetImage('assets/register.png'), fit: BoxFit.cover)
-      ),
+              image: AssetImage('assets/register.png'), fit: BoxFit.cover)),
       child: Scaffold(
 
         appBar: AppBar(
@@ -24,7 +23,7 @@ class _MyRegisterState extends State<MyRegister> {
           elevation: 0,
         ),
 
-        // using scaffold it removes the container background to fix the the issue we use this
+        // using scaffold removes the container to fix the the issue we use this
         backgroundColor: Colors.transparent,
 
         body: Stack(
@@ -32,7 +31,7 @@ class _MyRegisterState extends State<MyRegister> {
             Container(
               padding: EdgeInsets.only(left: 30, top: 30),
               child: Text(
-                'Register\nnow',
+                'Forgot\npassword',
                 style: TextStyle(color: Colors.white, fontSize: 30),
               ),
             ),
@@ -43,63 +42,6 @@ class _MyRegisterState extends State<MyRegister> {
                   left: 35),
               child: Column(
                 children: [
-
-                  TextField(
-                    keyboardType: TextInputType.name,
-                    autocorrect: false, // Disables auto-correction
-                    enableSuggestions: false,
-                    inputFormatters: [
-                      LengthLimitingTextInputFormatter(20), // Max length of 20
-                      FilteringTextInputFormatter.allow(RegExp(r'^[a-zA-Z\s]*$')), // Only alphabets and spaces
-                    ],
-                    decoration: InputDecoration(
-                      hintText: 'Name',
-                      fillColor: Colors.green.shade100,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      labelText: 'Name', // Makes the label float above when typing
-                      floatingLabelBehavior: FloatingLabelBehavior.auto, // Float label when typing
-                    ),
-                  ),
-
-
-                  SizedBox(
-                      height: 30
-                  ),
-
-                  TextField(
-                    controller: _controller,
-                    keyboardType: TextInputType.number, // Specifies the input type for numbers
-                    decoration: InputDecoration(
-                        hintText: 'Number',
-                        fillColor: Colors.green.shade100,
-                        filled: true,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10)
-                        ),
-                      labelText: "Number",
-                      floatingLabelBehavior: FloatingLabelBehavior.auto,
-                    ),
-                    inputFormatters: <TextInputFormatter>[
-                      FilteringTextInputFormatter.digitsOnly, // Allows only numeric input
-                      LengthLimitingTextInputFormatter(12), // Max length
-                    ],
-                    onChanged: (value) {
-                      if (value.length < 3) {
-                        print("Minimum 11 characters required!");
-                      }
-                      else if(value.length>3){
-                        print("Maximum 12 characters allowed!");
-                      }
-                    },
-
-                  ),
-                  SizedBox(
-                      height: 30
-                  ),
-
                   TextField(
                     keyboardType: TextInputType.emailAddress,
                     autocorrect: false, // Disables auto-correction
@@ -126,31 +68,34 @@ class _MyRegisterState extends State<MyRegister> {
                       }
                     },
                   ),
-
                   SizedBox(
-                      height: 30
+                      height: 20
                   ),
                   TextField(
+                    obscureText: true,
                     keyboardType: TextInputType.text,
                     autocorrect: false, // Disables auto-correction
                     enableSuggestions: false,
-                    obscureText: true,
                     decoration: InputDecoration(
                         hintText: 'Password',
                         fillColor: Colors.green.shade100,
                         filled: true,
                         border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10))),
+                            borderRadius: BorderRadius.circular(10)
+                        ),
+                      labelText: "Password",
+                      floatingLabelBehavior: FloatingLabelBehavior.auto,
+                    ),
                   ),
 
                   SizedBox(
-                      height: 40
+                      height: 30
                   ),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Sign Up',
+                      Text('Forgot Password',
                         style: TextStyle(fontSize: 27,
                             color: Color(0xff4c505b),
                             fontWeight: FontWeight.w700),
@@ -169,12 +114,22 @@ class _MyRegisterState extends State<MyRegister> {
                   ),
 
                   SizedBox(
-                      height: 40
+                      height: 30
                   ),
 
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      TextButton(onPressed: (){
+                        Navigator.pushReplacementNamed(context, 'register');
+                      },
+                        child: Text('Sign Up', style: TextStyle(
+                          decoration: TextDecoration.underline,
+                          fontSize: 18,
+                          color: Color(0xff4c505b),
+                        ),),
+                      ),
+
                       TextButton(onPressed: (){
                         Navigator.pushReplacementNamed(context, 'login');
                       },
@@ -183,16 +138,8 @@ class _MyRegisterState extends State<MyRegister> {
                           fontSize: 18,
                           color: Color(0xff4c505b),
                         ),),
-                      ),
-
-                      /*TextButton(onPressed: (){},
-                        child: Text('Forgot Password', style: TextStyle(
-                          decoration: TextDecoration.underline,
-                          fontSize: 18,
-                          color: Color(0xff4c505b),
-                        ),),
                       )
-*/
+
                     ],
                   )
 
