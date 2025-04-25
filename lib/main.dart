@@ -5,6 +5,7 @@ import 'package:test_app/app_ui/register.dart';
 import 'package:test_app/app_ui/forgot_password.dart';
 
 import 'app_ui/main_screen.dart';
+import 'app_ui/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,9 +20,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: 'login',
+      //initialRoute: 'login',
       debugShowCheckedModeBanner: false,
+      home: const SplashScreen(),
       routes: {
+        'splash': (context) => const SplashScreen(),
         'login': (context) => const MyLogin(),
         'register': (context) => const MyRegister(),
         'forgot_password': (context) => const MyForgotPassword(),
