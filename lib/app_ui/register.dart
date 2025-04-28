@@ -95,8 +95,9 @@ class _MyRegisterState extends State<MyRegister> {
                     TextFormField(
                       controller: _nameController,
                       keyboardType: TextInputType.name,
+                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
                       autocorrect: false,
-                      enableSuggestions: false,
+                      enableSuggestions: true,
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(20),
                         FilteringTextInputFormatter.allow(RegExp(r'^[a-zA-Z\s]*$')),
@@ -122,6 +123,8 @@ class _MyRegisterState extends State<MyRegister> {
                     TextFormField(
                       controller: _numberController,
                       keyboardType: TextInputType.number,
+                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
+                      enableSuggestions: true,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         LengthLimitingTextInputFormatter(12),
@@ -150,8 +153,9 @@ class _MyRegisterState extends State<MyRegister> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
                       autocorrect: false,
-                      enableSuggestions: false,
+                      enableSuggestions: true,
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(25),
                         FilteringTextInputFormatter.deny(RegExp(r'\s')),

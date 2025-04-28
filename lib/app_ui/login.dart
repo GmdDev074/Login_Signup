@@ -109,8 +109,9 @@ class _MyLoginState extends State<MyLogin> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
                       autocorrect: false,
-                      enableSuggestions: false,
+                      enableSuggestions: true,
                       inputFormatters: [
                         LengthLimitingTextInputFormatter(25),
                         FilteringTextInputFormatter.deny(RegExp(r'\s')),

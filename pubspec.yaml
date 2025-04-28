@@ -43,6 +43,7 @@ dev_dependencies:
   cloud_firestore: ^4.8.0
   google_sign_in: ^6.1.0
   shared_preferences: ^2.0.15
+  url_launcher: ^6.1.12  #when forgot password email triggered redirect user to the email app
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
