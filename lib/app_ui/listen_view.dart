@@ -329,31 +329,41 @@ class _ListenViewState extends State<ListenView> {
                                           ),
                                         ),
                                         const SizedBox(height: 4),
-                                        Text(
+                                        /*Text(
                                           schedule.topic.isNotEmpty
                                               ? schedule.topic
                                               : 'No topic specified',
-                                          style: const TextStyle(fontSize: 14),
+                                          style: const TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
+                                        ),*/
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.description, size: 16, color: Colors.black),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Topic: ${schedule.topic.isNotEmpty ? schedule.topic : 'No topic specified'}',
+                                              style: const TextStyle(fontSize: 14, color: Colors.black),
+                                            ),
+                                          ],
                                         ),
                                         const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            const Icon(Icons.meeting_room, size: 16, color: Colors.grey),
+                                            const Icon(Icons.meeting_room, size: 16, color: Colors.black),
                                             const SizedBox(width: 4),
                                             Text(
                                               'Room: ${schedule.room}',
-                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                              style: const TextStyle(fontSize: 12, color: Colors.black),
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 4),
                                         Row(
                                           children: [
-                                            const Icon(Icons.person, size: 16, color: Colors.grey),
+                                            const Icon(Icons.person, size: 16, color: Colors.black),
                                             const SizedBox(width: 4),
                                             Text(
                                               schedule.lecturer,
-                                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                              style: const TextStyle(fontSize: 12, color: Colors.black),
                                             ),
                                           ],
                                         ),
@@ -361,22 +371,22 @@ class _ListenViewState extends State<ListenView> {
                                         if (schedule.institutionType == 'School' && schedule.schoolClass != null)
                                           Row(
                                             children: [
-                                              const Icon(Icons.class_, size: 16, color: Colors.grey),
+                                              const Icon(Icons.class_, size: 16, color: Colors.black),
                                               const SizedBox(width: 4),
                                               Text(
                                                 'Class: ${schedule.schoolClass}',
-                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                style: const TextStyle(fontSize: 12, color: Colors.black),
                                               ),
                                             ],
                                           ),
                                         if (schedule.institutionType == 'College' && schedule.collegeField != null)
                                           Row(
                                             children: [
-                                              const Icon(Icons.school, size: 16, color: Colors.grey),
+                                              const Icon(Icons.school, size: 16, color: Colors.black),
                                               const SizedBox(width: 4),
                                               Text(
                                                 'Field: ${schedule.collegeField}',
-                                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                style: const TextStyle(fontSize: 12, color: Colors.black),
                                               ),
                                             ],
                                           ),
@@ -384,11 +394,11 @@ class _ListenViewState extends State<ListenView> {
                                           if (schedule.universityDepartment != null)
                                             Row(
                                               children: [
-                                                const Icon(Icons.account_balance, size: 16, color: Colors.grey),
+                                                const Icon(Icons.account_balance, size: 16, color: Colors.black),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   'Department: ${schedule.universityDepartment}',
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                  style: const TextStyle(fontSize: 12, color: Colors.black),
                                                 ),
                                               ],
                                             ),
@@ -396,11 +406,11 @@ class _ListenViewState extends State<ListenView> {
                                           if (schedule.universitySemester != null)
                                             Row(
                                               children: [
-                                                const Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                                                const Icon(Icons.calendar_today, size: 16, color: Colors.black),
                                                 const SizedBox(width: 4),
                                                 Text(
                                                   'Semester: ${schedule.universitySemester}',
-                                                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                                  style: const TextStyle(fontSize: 12, color: Colors.black),
                                                 ),
                                               ],
                                             ),
