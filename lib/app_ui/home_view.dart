@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart';
 import '../controllers/home_view_controller.dart';
-import '../models/alarm_model.dart';
-import '../models/note_model.dart';
-import 'create_item_bottom_sheet.dart';
+import '../models/subject_model.dart';
+import '../models/schedule_model.dart';
+import 'add_schedule_bottom_sheet.dart';
+import 'add_subject_bottom_sheet.dart';
+import 'update_schedule_bottom_sheet.dart';
+import 'subjects_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -18,6 +19,55 @@ class _HomeViewState extends State<HomeView> {
   final HomeViewController _controller = HomeViewController();
   final User? user = FirebaseAuth.instance.currentUser;
 
+  // Method to get the subject name by ID
+  Future<String> _getSubjectName(String subjectId) async {
+    final subjects = await _controller.getSubjectsStream(user!.uid).first;
+    final subject = subjects.firstWhere((subject) => subject.id == subjectId, orElse: () => Subject(id: '', name: 'Unknown', userId: user!.uid));
+    return subject.name;
+  }
+
+  // Method to fetch all schedules across all subjects
+  Future<List<Schedule>> _fetchAllSchedules() async {
+    final subjects = await _controller.getSubjectsStream(user!.uid).first;
+    if (subjects.isEmpty) return [];
+
+    final allSchedules = await Future.wait(subjects.map((subject) async {
+      final schedules = await _controller.getSchedulesStream(user!.uid, subject.id!).first;
+      return schedules;
+    }));
+
+    // Flatten the list of lists and sort by scheduledDateTime
+    final flattenedSchedules = allSchedules.expand((x) => x).toList();
+    flattenedSchedules.sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
+    return flattenedSchedules;
+  }
+
+  // Method to delete a schedule
+  Future<void> _deleteSchedule(String scheduleId, String subjectId) async {
+    try {
+      await _controller.deleteSchedule(user!.uid, subjectId, scheduleId);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to delete schedule: $e')),
+      );
+    }
+  }
+
+  // Method to show the update bottom sheet
+  Future<void> _showUpdateScheduleBottomSheet(Schedule schedule, String subjectName) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => UpdateScheduleBottomSheet(
+        userId: user!.uid,
+        subjectId: schedule.subjectId,
+        subjectName: subjectName,
+        schedule: schedule,
+      ),
+    );
+    setState(() {}); // Refresh the list after updating
+  }
+
   @override
   Widget build(BuildContext context) {
     if (user == null) {
@@ -27,210 +77,311 @@ class _HomeViewState extends State<HomeView> {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Home'),
-          backgroundColor: Colors.green.shade700,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.pushReplacementNamed(context, 'login');
-              },
-            ),
-          ],
-          bottom: const TabBar(
-            tabs: [
-              Tab(text: 'Notes'),
-              Tab(text: 'Alarms'),
-            ],
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Schedule'),
+        backgroundColor: Colors.green.shade700,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              Navigator.pushReplacementNamed(context, 'login');
+            },
           ),
-        ),
-        body: TabBarView(
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Notes Section
-            StreamBuilder<QuerySnapshot>(
-              stream: _controller.getNotesStream(user!.uid),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                final notes = snapshot.data!.docs
-                    .map((doc) => Note.fromMap(doc.data() as Map<String, dynamic>, doc.id))
-                    .toList();
-
-                if (notes.isEmpty) {
-                  return const Center(child: Text('No notes available'));
-                }
-
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: notes.length,
-                  itemBuilder: (context, index) {
-                    final note = notes[index];
-                    return Dismissible(
-                      key: Key(note.id!),
-                      background: Container(
-                        color: Colors.blue,
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.only(left: 20),
-                        child: const Icon(Icons.edit, color: Colors.white),
+            // Subjects Section (User-added subjects in a horizontally scrollable row)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Subjects',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      secondaryBackground: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, 'subjects');
+                        },
+                        child: Text(
+                          'Recommendations for you',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
                       ),
-                      onDismissed: (direction) async {
-                        if (direction == DismissDirection.endToStart) {
-                          await _controller.deleteNote(user!.uid, note.id!);
-                        }
-                      },
-                      confirmDismiss: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          await _showUpdateNoteBottomSheet(context, note);
-                          return false;
-                        }
-                        return direction == DismissDirection.endToStart;
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: ListTile(
-                          title: Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(note.description),
-                              Text(
-                                'Created: ${DateFormat('MMM dd, yyyy HH:mm').format(note.createdAt)}',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  StreamBuilder<List<Subject>>(
+                    stream: _controller.getSubjectsStream(user!.uid),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      }
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final subjects = snapshot.data ?? [];
+
+                      if (subjects.isEmpty) {
+                        return const Center(child: Text('No subjects added yet'));
+                      }
+
+                      return SizedBox(
+                        height: 140, // Fixed height to accommodate wrapped text
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: subjects.length,
+                          itemBuilder: (context, index) {
+                            final subject = subjects[index];
+                            final colors = [
+                              Colors.orange,
+                              Colors.blue.shade200,
+                              Colors.red.shade200,
+                              Colors.purple.shade200,
+                            ];
+                            final color = colors[index % colors.length];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 16.0),
+                              child: GestureDetector(
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    builder: (context) => AddScheduleBottomSheet(
+                                      userId: user!.uid,
+                                      subjectId: subject.id!,
+                                      subjectName: subject.name,
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  width: 100, // Fixed width for all cards
+                                  height: 140, // Fixed height for all cards
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.start, // Align content from the top
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          color: color,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            subject.name[0],
+                                            style: const TextStyle(
+                                              fontSize: 24,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        subject.name,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2, // Allow wrapping to 2 lines
+                                        overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
-                      ),
-                    );
-                  },
-                );
-              },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
-            // Alarms Section
-            StreamBuilder<QuerySnapshot>(
-              stream: _controller.getAlarmsStream(user!.uid),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+            // Your Schedule Section (All schedules in a vertical list)
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your Schedule',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FutureBuilder<List<Schedule>>(
+                    future: _fetchAllSchedules(),
+                    builder: (context, scheduleSnapshot) {
+                      if (scheduleSnapshot.hasError) {
+                        return Center(child: Text('Error: ${scheduleSnapshot.error}'));
+                      }
+                      if (scheduleSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-                final alarms = snapshot.data!.docs
-                    .map((doc) => Alarm.fromMap(doc.data() as Map<String, dynamic>, doc.id))
-                    .toList();
+                      final allSchedules = scheduleSnapshot.data ?? [];
 
-                if (alarms.isEmpty) {
-                  return const Center(child: Text('No alarms available'));
-                }
+                      if (allSchedules.isEmpty) {
+                        return const Center(child: Text('No schedules available'));
+                      }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                  itemCount: alarms.length,
-                  itemBuilder: (context, index) {
-                    final alarm = alarms[index];
-                    final remainingTime = alarm.scheduledTime.difference(DateTime.now());
-                    final remainingText = remainingTime.isNegative
-                        ? 'Triggered'
-                        : '${remainingTime.inHours}h ${remainingTime.inMinutes % 60}m remaining';
+                      return Column(
+                        children: allSchedules.map((schedule) {
+                          return FutureBuilder<String>(
+                            future: _getSubjectName(schedule.subjectId),
+                            builder: (context, snapshot) {
+                              if (snapshot.hasError) {
+                                return const SizedBox.shrink();
+                              }
+                              if (!snapshot.hasData) {
+                                return const SizedBox.shrink();
+                              }
 
-                    return Dismissible(
-                      key: Key(alarm.id!),
-                      background: Container(
-                        color: Colors.blue,
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.only(left: 20),
-                        child: const Icon(Icons.edit, color: Colors.white),
-                      ),
-                      secondaryBackground: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      onDismissed: (direction) async {
-                        if (direction == DismissDirection.endToStart) {
-                          await _controller.deleteAlarm(user!.uid, alarm.id!);
-                        }
-                      },
-                      confirmDismiss: (direction) async {
-                        if (direction == DismissDirection.startToEnd) {
-                          await _showUpdateAlarmBottomSheet(context, alarm);
-                          return false;
-                        }
-                        return direction == DismissDirection.endToStart;
-                      },
-                      child: Card(
-                        margin: const EdgeInsets.only(bottom: 16),
-                        child: ListTile(
-                          title: Text(alarm.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Scheduled: ${DateFormat('MMM dd, yyyy HH:mm').format(alarm.scheduledTime)}'),
-                              Text('Status: $remainingText', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+                              final subjectName = snapshot.data!;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 16.0),
+                                child: Dismissible(
+                                  key: Key(schedule.id!),
+                                  background: Container(
+                                    color: Colors.blue,
+                                    alignment: Alignment.centerLeft,
+                                    padding: const EdgeInsets.only(left: 20),
+                                    child: const Icon(Icons.edit, color: Colors.white),
+                                  ),
+                                  secondaryBackground: Container(
+                                    color: Colors.red,
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 20),
+                                    child: const Icon(Icons.delete, color: Colors.white),
+                                  ),
+                                  onDismissed: (direction) async {
+                                    if (direction == DismissDirection.endToStart) {
+                                      await _deleteSchedule(schedule.id!, schedule.subjectId);
+                                    }
+                                  },
+                                  confirmDismiss: (direction) async {
+                                    if (direction == DismissDirection.startToEnd) {
+                                      await _showUpdateScheduleBottomSheet(schedule, subjectName);
+                                      return false; // Prevent dismissal after editing
+                                    } else if (direction == DismissDirection.endToStart) {
+                                      return await showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          title: const Text('Delete Schedule'),
+                                          content: const Text('Are you sure you want to delete this schedule?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, false),
+                                              child: const Text('Cancel'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () => Navigator.pop(context, true),
+                                              child: const Text('Delete'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                    return false;
+                                  },
+                                  child: Card(
+                                    elevation: 2,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: ListTile(
+                                      leading: Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: Colors.green.shade100,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.book,
+                                          color: Colors.green,
+                                          size: 24,
+                                        ),
+                                      ),
+                                      title: Text(
+                                        subjectName,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(schedule.lecturer),
+                                          const SizedBox(height: 4),
+                                          Text('${schedule.date} at ${schedule.time}'),
+                                          Text('Room: ${schedule.room}'),
+                                          if (schedule.topic.isNotEmpty)
+                                            Text('Topic: ${schedule.topic}'),
+                                          if (schedule.institutionType == 'School' && schedule.schoolClass != null)
+                                            Text('Class: ${schedule.schoolClass}'),
+                                          if (schedule.institutionType == 'College' && schedule.collegeField != null)
+                                            Text('Field: ${schedule.collegeField}'),
+                                          if (schedule.institutionType == 'University') ...[
+                                            if (schedule.universityDepartment != null)
+                                              Text('Department: ${schedule.universityDepartment}'),
+                                            if (schedule.universitySemester != null)
+                                              Text('Semester: ${schedule.universitySemester}'),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.green.shade700,
-          onPressed: () => showModalBottomSheet(
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green.shade700,
+        onPressed: () {
+          showModalBottomSheet(
             context: context,
             isScrollControlled: true,
-            builder: (context) => CreateItemBottomSheet(userId: user!.uid),
-          ),
-          child: const Icon(Icons.add),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _showUpdateNoteBottomSheet(BuildContext context, Note note) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => CreateItemBottomSheet(
-        userId: user!.uid,
-        note: note,
-      ),
-    );
-  }
-
-  Future<void> _showUpdateAlarmBottomSheet(BuildContext context, Alarm alarm) async {
-    await showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (context) => CreateItemBottomSheet(
-        userId: user!.uid,
-        alarm: alarm,
+            builder: (context) => AddSubjectBottomSheet(userId: user!.uid),
+          );
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
