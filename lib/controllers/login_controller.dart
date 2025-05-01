@@ -2,13 +2,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/register_model.dart';
 
 class LoginController {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+  // Save login state
+  Future<void> _saveLoginState() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isLoggedIn', true);
+  }
 
   // Email/Password Login
   Future<String?> loginWithEmail({
@@ -21,6 +27,7 @@ class LoginController {
         email: email,
         password: password,
       );
+      await _saveLoginState(); // Save login state
       return null; // Success
     } on FirebaseAuthException catch (e) {
       String errorMessage;
@@ -69,7 +76,7 @@ class LoginController {
       if (user != null) {
         final userModel = UserModel(
           name: user.displayName ?? 'Google User',
-          number: '', // Google doesn't provide phone number
+          number: '',
           email: user.email ?? '',
           uid: user.uid,
         );
@@ -77,14 +84,30 @@ class LoginController {
         // Check if user document already exists
         final docSnapshot = await _firestore.collection('users').doc(user.uid).get();
         if (!docSnapshot.exists) {
-          // Only set data if the document doesn't exist (avoid overwriting existing data)
+          // Only set data if the document doesn't exist
           await _firestore.collection('users').doc(user.uid).set(userModel.toMap());
         }
       }
 
+      await _saveLoginState(); // Save login state
       return null; // Success
     } catch (e) {
       return 'Google Sign-In failed: $e';
+    }
+  }
+
+  // Logout
+  Future<void> logout(BuildContext context) async {
+    try {
+      await _googleSignIn.signOut();
+      await _auth.signOut();
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', false);
+      Navigator.pushReplacementNamed(context, 'login');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Logout failed: $e')),
+      );
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/profile_controller.dart';
+import '../controllers/login_controller.dart';
 import '../models/register_model.dart';
 
 class InfoView extends StatelessWidget {
@@ -10,6 +11,7 @@ class InfoView extends StatelessWidget {
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
     final ProfileController profileController = ProfileController();
+    final LoginController loginController = LoginController();
 
     if (user == null) {
       // If no user is logged in, redirect to login
@@ -20,10 +22,17 @@ class InfoView extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Info'),
+      /*appBar: AppBar(
         backgroundColor: Colors.green.shade700,
-      ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await loginController.logout(context);
+            },
+          ),
+        ],
+      ),*/
       body: FutureBuilder<UserModel?>(
         future: profileController.getUserData(user.uid),
         builder: (context, snapshot) {

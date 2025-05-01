@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/register_model.dart';
 
 class RegisterController {
@@ -34,6 +35,10 @@ class RegisterController {
           .collection('users')
           .doc(userCredential.user!.uid)
           .set(user.toMap());
+
+      // Save login state
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('isLoggedIn', true);
 
       return null; // Success
     } on FirebaseAuthException catch (e) {

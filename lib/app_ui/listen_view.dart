@@ -1,10 +1,54 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../controllers/home_view_controller.dart';
 import '../models/schedule_model.dart';
 import '../models/subject_model.dart';
 import 'update_schedule_bottom_sheet.dart';
+
+// Helper widget to draw a vertical dashed line for the timeline
+class DashedLineVertical extends StatelessWidget {
+  final double height;
+  final Color color;
+  final double dashHeight;
+  final double dashSpace;
+
+  const DashedLineVertical({
+    super.key,
+    required this.height,
+    this.color = Colors.grey,
+    this.dashHeight = 5,
+    this.dashSpace = 3,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final boxHeight = constraints.constrainHeight();
+          final dashCount = (boxHeight / (dashHeight + dashSpace)).floor();
+          return Column(
+            children: List.generate(dashCount, (_) {
+              return Column(
+                children: [
+                  Container(
+                    width: 1,
+                    height: dashHeight,
+                    color: color,
+                  ),
+                  SizedBox(height: dashSpace),
+                ],
+              );
+            }),
+          );
+        },
+      ),
+    );
+  }
+}
 
 class ListenView extends StatefulWidget {
   const ListenView({super.key});
@@ -18,7 +62,7 @@ class _ListenViewState extends State<ListenView> {
   final User? user = FirebaseAuth.instance.currentUser;
   DateTime _selectedDate = DateTime.now();
 
-  // Method to get the subject name by ID
+  // Fetches the subject name for a given subject ID
   Future<String> _getSubjectName(String subjectId) async {
     final subjects = await _controller.getSubjectsStream(user!.uid).first;
     final subject = subjects.firstWhere(
@@ -28,19 +72,20 @@ class _ListenViewState extends State<ListenView> {
     return subject.name;
   }
 
-  // Method to fetch all schedules across all subjects for the selected date
+  // Fetches schedules for the selected date across all subjects
   Future<List<Schedule>> _fetchSchedulesForSelectedDate() async {
     final subjects = await _controller.getSubjectsStream(user!.uid).first;
     if (subjects.isEmpty) return [];
 
     final allSchedules = await Future.wait(subjects.map((subject) async {
-      final schedules = await _controller.getSchedulesStream(user!.uid, subject.id!).first;
+      final schedules =
+      await _controller.getSchedulesStream(user!.uid, subject.id!).first;
       return schedules;
     }));
 
-    // Flatten the list of lists and filter by selected date
     final flattenedSchedules = allSchedules.expand((x) => x).toList();
-    return flattenedSchedules.where((schedule) {
+    return flattenedSchedules
+        .where((schedule) {
       final scheduleDate = DateTime(
         schedule.scheduledDateTime.year,
         schedule.scheduledDateTime.month,
@@ -52,17 +97,18 @@ class _ListenViewState extends State<ListenView> {
         _selectedDate.day,
       );
       return scheduleDate == selected;
-    }).toList()
+    })
+        .toList()
       ..sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
   }
 
-  // Generate a list of dates for the horizontal date picker (7 days starting from today)
+  // Generates a list of dates for the next 7 days
   List<DateTime> _getDateList() {
     final now = DateTime.now();
     return List.generate(7, (index) => now.add(Duration(days: index)));
   }
 
-  // Method to delete a schedule
+  // Deletes a schedule with confirmation
   Future<void> _deleteSchedule(String scheduleId, String subjectId) async {
     try {
       await _controller.deleteSchedule(user!.uid, subjectId, scheduleId);
@@ -73,8 +119,9 @@ class _ListenViewState extends State<ListenView> {
     }
   }
 
-  // Method to show the update bottom sheet
-  Future<void> _showUpdateScheduleBottomSheet(Schedule schedule, String subjectName) async {
+  // Shows the update schedule bottom sheet
+  Future<void> _showUpdateScheduleBottomSheet(
+      Schedule schedule, String subjectName) async {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -85,7 +132,7 @@ class _ListenViewState extends State<ListenView> {
         schedule: schedule,
       ),
     );
-    setState(() {}); // Refresh the list after updating
+    setState(() {});
   }
 
   @override
@@ -98,24 +145,21 @@ class _ListenViewState extends State<ListenView> {
     }
 
     final dateList = _getDateList();
+    final isTodaySelected = DateTime(
+      _selectedDate.year,
+      _selectedDate.month,
+      _selectedDate.day,
+    ) ==
+        DateTime(
+          DateTime.now().year,
+          DateTime.now().month,
+          DateTime.now().day,
+        );
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Schedule'),
-        backgroundColor: Colors.green.shade700,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, 'login');
-            },
-          ),
-        ],
-      ),
       body: Column(
         children: [
-          // Date Picker Header
+          // Date header and controls
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
             child: Row(
@@ -134,7 +178,9 @@ class _ListenViewState extends State<ListenView> {
                         });
                       },
                       child: Text(
-                        'Today',
+                        isTodaySelected
+                            ? 'Today'
+                            : DateFormat('EEEE').format(_selectedDate),
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.green.shade700,
@@ -142,14 +188,12 @@ class _ListenViewState extends State<ListenView> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.more_vert, color: Colors.grey),
                   ],
                 ),
               ],
             ),
           ),
-          // Horizontal Date Picker
+          // Horizontal date selector
           Container(
             height: 80,
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -212,7 +256,7 @@ class _ListenViewState extends State<ListenView> {
               },
             ),
           ),
-          // Scheduled Lectures List
+          // Schedule list with timeline
           Expanded(
             child: FutureBuilder<List<Schedule>>(
               future: _fetchSchedulesForSelectedDate(),
@@ -227,7 +271,8 @@ class _ListenViewState extends State<ListenView> {
                 final schedules = snapshot.data ?? [];
 
                 if (schedules.isEmpty) {
-                  return const Center(child: Text('No lectures scheduled for this date'));
+                  return const Center(
+                      child: Text('No lectures scheduled for this date'));
                 }
 
                 return ListView.builder(
@@ -268,17 +313,20 @@ class _ListenViewState extends State<ListenView> {
                           },
                           confirmDismiss: (direction) async {
                             if (direction == DismissDirection.startToEnd) {
-                              await _showUpdateScheduleBottomSheet(schedule, subjectName);
-                              return false; // Prevent dismissal after editing
+                              await _showUpdateScheduleBottomSheet(
+                                  schedule, subjectName);
+                              return false;
                             } else if (direction == DismissDirection.endToStart) {
                               return await showDialog(
                                 context: context,
                                 builder: (context) => AlertDialog(
                                   title: const Text('Delete Schedule'),
-                                  content: const Text('Are you sure you want to delete this schedule?'),
+                                  content: const Text(
+                                      'Are you sure you want to delete this schedule?'),
                                   actions: [
                                     TextButton(
-                                      onPressed: () => Navigator.pop(context, false),
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
                                       child: const Text('Cancel'),
                                     ),
                                     TextButton(
@@ -291,135 +339,253 @@ class _ListenViewState extends State<ListenView> {
                             }
                             return false;
                           },
-                          child: Card(
-                            elevation: 2,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Time on the left
-                                  Column(
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Timeline on the left
+                                SizedBox(
+                                  width: 60,
+                                  child: Column(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        DateFormat('hh:mm a').format(schedule.scheduledDateTime),
+                                        schedule.time,
                                         style: const TextStyle(
-                                          fontSize: 16,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const Expanded(
+                                        child: DashedLineVertical(
+                                          dashHeight: 5,
+                                          dashSpace: 3,
+                                          color: Colors.grey,
+                                          height: 10,
+                                        ),
+                                      ),
+                                      Text(
+                                        schedule.endTime,
+                                        style: const TextStyle(
+                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(width: 16),
-                                  // Lecture details
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          subjectName,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.green,
+                                ),
+                                const SizedBox(width: 8),
+                                // Schedule card on the right
+                                Expanded(
+                                  child: Card(
+                                    elevation: 2,
+                                    margin: const EdgeInsets.only(bottom: 16),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(16.0),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: [
+                                          // Subject name
+                                          Text(
+                                            subjectName,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                            softWrap: true,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        /*Text(
-                                          schedule.topic.isNotEmpty
-                                              ? schedule.topic
-                                              : 'No topic specified',
-                                          style: const TextStyle(fontSize: 16, color: Colors.black, fontWeight: FontWeight.bold),
-                                        ),*/
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.description, size: 16, color: Colors.black),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Topic: ${schedule.topic.isNotEmpty ? schedule.topic : 'No topic specified'}',
-                                              style: const TextStyle(fontSize: 14, color: Colors.black),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.meeting_room, size: 16, color: Colors.black),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              'Room: ${schedule.room}',
-                                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.person, size: 16, color: Colors.black),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              schedule.lecturer,
-                                              style: const TextStyle(fontSize: 12, color: Colors.black),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        if (schedule.institutionType == 'School' && schedule.schoolClass != null)
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.class_, size: 16, color: Colors.black),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Class: ${schedule.schoolClass}',
-                                                style: const TextStyle(fontSize: 12, color: Colors.black),
-                                              ),
-                                            ],
-                                          ),
-                                        if (schedule.institutionType == 'College' && schedule.collegeField != null)
-                                          Row(
-                                            children: [
-                                              const Icon(Icons.school, size: 16, color: Colors.black),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                'Field: ${schedule.collegeField}',
-                                                style: const TextStyle(fontSize: 12, color: Colors.black),
-                                              ),
-                                            ],
-                                          ),
-                                        if (schedule.institutionType == 'University') ...[
-                                          if (schedule.universityDepartment != null)
-                                            Row(
-                                              children: [
-                                                const Icon(Icons.account_balance, size: 16, color: Colors.black),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  'Department: ${schedule.universityDepartment}',
-                                                  style: const TextStyle(fontSize: 12, color: Colors.black),
-                                                ),
-                                              ],
-                                            ),
                                           const SizedBox(height: 4),
-                                          if (schedule.universitySemester != null)
+                                          // Topic
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.description,
+                                                  size: 16, color: Colors.black),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  'Topic: ${schedule.topic.isNotEmpty ? schedule.topic : 'No topic specified'}',
+                                                  style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.black),
+                                                  softWrap: true,
+                                                  maxLines: 3,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          // Room
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.meeting_room,
+                                                  size: 16, color: Colors.black),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  'Room: ${schedule.room}',
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black),
+                                                  softWrap: true,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          // Lecturer
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.person,
+                                                  size: 16, color: Colors.black),
+                                              const SizedBox(width: 4),
+                                              Expanded(
+                                                child: Text(
+                                                  'Lecturer: ${schedule.lecturer}',
+                                                  style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black),
+                                                  softWrap: true,
+                                                  maxLines: 2,
+                                                  overflow: TextOverflow.ellipsis,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          // Institution-specific fields
+                                          if (schedule.institutionType == 'School' &&
+                                              schedule.schoolClass != null)
                                             Row(
                                               children: [
-                                                const Icon(Icons.calendar_today, size: 16, color: Colors.black),
+                                                const Icon(Icons.class_,
+                                                    size: 16,
+                                                    color: Colors.black),
                                                 const SizedBox(width: 4),
-                                                Text(
-                                                  'Semester: ${schedule.universitySemester}',
-                                                  style: const TextStyle(fontSize: 12, color: Colors.black),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Class: ${schedule.schoolClass}',
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.black),
+                                                    softWrap: true,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                    TextOverflow.ellipsis,
+                                                  ),
                                                 ),
                                               ],
                                             ),
+                                          if (schedule.institutionType ==
+                                              'College' &&
+                                              schedule.collegeField != null)
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.school,
+                                                    size: 16,
+                                                    color: Colors.black),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    'Field: ${schedule.collegeField}',
+                                                    style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.black),
+                                                    softWrap: true,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                    TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          if (schedule.institutionType ==
+                                              'University') ...[
+                                            if (schedule.universityDepartment !=
+                                                null)
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                      Icons.account_balance,
+                                                      size: 16,
+                                                      color: Colors.black),
+                                                  const SizedBox(width: 3),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Department: ${schedule.universityDepartment}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.black),
+                                                      softWrap: true,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                      TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            const SizedBox(height: 4),
+                                            if (schedule.universitySemester != null)
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                      Icons.calendar_today,
+                                                      size: 16,
+                                                      color: Colors.black),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Semester: ${schedule.universitySemester}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.black),
+                                                      softWrap: true,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                      TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            const SizedBox(height: 4),
+                                            if (schedule.universityShift != null)
+                                              Row(
+                                                children: [
+                                                  const Icon(Icons.schedule,
+                                                      size: 16,
+                                                      color: Colors.black),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'Shift: ${schedule.universityShift}',
+                                                      style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors.black),
+                                                      softWrap: true,
+                                                      maxLines: 2,
+                                                      overflow:
+                                                      TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                          ],
                                         ],
-                                      ],
+                                      ),
                                     ),
                                   ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         );

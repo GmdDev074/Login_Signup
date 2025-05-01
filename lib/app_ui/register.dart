@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../controllers/register_controller.dart';
 
 class MyRegister extends StatefulWidget {
@@ -95,7 +94,7 @@ class _MyRegisterState extends State<MyRegister> {
                     TextFormField(
                       controller: _nameController,
                       keyboardType: TextInputType.name,
-                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
+                      textInputAction: TextInputAction.next,
                       autocorrect: false,
                       enableSuggestions: true,
                       inputFormatters: [
@@ -123,7 +122,7 @@ class _MyRegisterState extends State<MyRegister> {
                     TextFormField(
                       controller: _numberController,
                       keyboardType: TextInputType.number,
-                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
+                      textInputAction: TextInputAction.next,
                       enableSuggestions: true,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
@@ -153,7 +152,7 @@ class _MyRegisterState extends State<MyRegister> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
+                      textInputAction: TextInputAction.next,
                       autocorrect: false,
                       enableSuggestions: true,
                       inputFormatters: [

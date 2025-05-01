@@ -24,19 +24,22 @@ class UpdateScheduleBottomSheet extends StatefulWidget {
 class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
   final _formKey = GlobalKey<FormState>();
   late DateTime _selectedDateTime;
+  late DateTime _endDateTime;
   late final TextEditingController _roomController;
   late final TextEditingController _lecturerController;
   late final TextEditingController _topicController;
   late final TextEditingController _schoolClassController;
   late final TextEditingController _universityDepartmentController;
-  late final TextEditingController _universitySemesterController;
   final HomeViewController _controller = HomeViewController();
 
   late String _institutionType;
   String? _collegeField;
+  String? _universitySemester;
+  String? _universityShift;
 
   final _dateFocusNode = FocusNode();
   final _timeFocusNode = FocusNode();
+  final _endTimeFocusNode = FocusNode();
   final _roomFocusNode = FocusNode();
   final _lecturerFocusNode = FocusNode();
   final _topicFocusNode = FocusNode();
@@ -44,14 +47,26 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
   final _collegeFieldFocusNode = FocusNode();
   final _universityDepartmentFocusNode = FocusNode();
   final _universitySemesterFocusNode = FocusNode();
+  final _universityShiftFocusNode = FocusNode();
 
-  final List<String> _collegeFields = ['FA', 'ICS', 'FSc', 'Medical', 'Non-Medical'];
+  final List<String> _collegeFields = [
+    'FA', 'ICS', 'FSc (Pre-Medical)', 'FSc (Pre-Engineering)', 'I.Com',
+    'DAE (Electrical)', 'DAE (Mechanical)', 'DAE (Civil)', 'DAE (Electronics)'
+  ];
+
+  final List<String> _universitySemesters = [
+    '1st', '2nd', '3rd', '4th',
+    '5th', '6th', '7th', '8th'
+  ];
+
+  final List<String> _universityShifts = ['Morning', 'Evening'];
 
   @override
   void initState() {
     super.initState();
     // Initialize fields with existing schedule data
     _selectedDateTime = widget.schedule.scheduledDateTime;
+    _endDateTime = widget.schedule.endDateTime;
     _roomController = TextEditingController(text: widget.schedule.room);
     _lecturerController = TextEditingController(text: widget.schedule.lecturer);
     _topicController = TextEditingController(text: widget.schedule.topic);
@@ -59,7 +74,8 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
     _schoolClassController = TextEditingController(text: widget.schedule.schoolClass);
     _collegeField = widget.schedule.collegeField;
     _universityDepartmentController = TextEditingController(text: widget.schedule.universityDepartment);
-    _universitySemesterController = TextEditingController(text: widget.schedule.universitySemester);
+    _universitySemester = widget.schedule.universitySemester;
+    _universityShift = widget.schedule.universityShift;
   }
 
   @override
@@ -69,9 +85,9 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
     _topicController.dispose();
     _schoolClassController.dispose();
     _universityDepartmentController.dispose();
-    _universitySemesterController.dispose();
     _dateFocusNode.dispose();
     _timeFocusNode.dispose();
+    _endTimeFocusNode.dispose();
     _roomFocusNode.dispose();
     _lecturerFocusNode.dispose();
     _topicFocusNode.dispose();
@@ -79,6 +95,7 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
     _collegeFieldFocusNode.dispose();
     _universityDepartmentFocusNode.dispose();
     _universitySemesterFocusNode.dispose();
+    _universityShiftFocusNode.dispose();
     super.dispose();
   }
 
@@ -98,6 +115,9 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
           _selectedDateTime.hour,
           _selectedDateTime.minute,
         );
+        if (_endDateTime.isBefore(_selectedDateTime)) {
+          _endDateTime = _selectedDateTime.add(const Duration(hours: 1));
+        }
       });
     }
   }
@@ -116,15 +136,44 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
           picked.hour,
           picked.minute,
         );
+        if (_endDateTime.isBefore(_selectedDateTime)) {
+          _endDateTime = _selectedDateTime.add(const Duration(hours: 1));
+        }
+      });
+    }
+  }
+
+  Future<void> _selectEndTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(_endDateTime),
+    );
+    if (picked != null) {
+      setState(() {
+        final newEndDateTime = DateTime(
+          _selectedDateTime.year,
+          _selectedDateTime.month,
+          _selectedDateTime.day,
+          picked.hour,
+          picked.minute,
+        );
+        if (newEndDateTime.isAfter(_selectedDateTime)) {
+          _endDateTime = newEndDateTime;
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('End time must be after start time')),
+          );
+        }
       });
     }
   }
 
   void _submit() async {
-    if (_formKey.currentState!.validate() && _selectedDateTime != null) {
+    if (_formKey.currentState!.validate() && _selectedDateTime != null && _endDateTime != null) {
       final updatedSchedule = Schedule(
         id: widget.schedule.id,
         scheduledDateTime: _selectedDateTime,
+        endDateTime: _endDateTime,
         room: _roomController.text,
         lecturer: _lecturerController.text,
         topic: _topicController.text,
@@ -134,7 +183,8 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
         schoolClass: _institutionType == 'School' ? _schoolClassController.text : null,
         collegeField: _institutionType == 'College' ? _collegeField : null,
         universityDepartment: _institutionType == 'University' ? _universityDepartmentController.text : null,
-        universitySemester: _institutionType == 'University' ? _universitySemesterController.text : null,
+        universitySemester: _institutionType == 'University' ? _universitySemester : null,
+        universityShift: _institutionType == 'University' ? _universityShift : null,
       );
       try {
         await _controller.updateSchedule(updatedSchedule);
@@ -144,9 +194,9 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
           SnackBar(content: Text('Failed to update schedule: $e')),
         );
       }
-    } else if (_selectedDateTime == null) {
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a date and time')),
+        const SnackBar(content: Text('Please fill all required fields, including start and end time')),
       );
     }
   }
@@ -175,7 +225,6 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
                 ),
               ),
               const SizedBox(height: 16),
-              // Institution Type Dropdown
               DropdownButtonFormField<String>(
                 value: _institutionType,
                 decoration: const InputDecoration(
@@ -194,12 +243,12 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
                     _schoolClassController.clear();
                     _collegeField = null;
                     _universityDepartmentController.clear();
-                    _universitySemesterController.clear();
+                    _universitySemester = null;
+                    _universityShift = null;
                   });
                 },
               ),
               const SizedBox(height: 16),
-              // Conditional Fields based on Institution Type
               if (_institutionType == 'School') ...[
                 TextFormField(
                   focusNode: _schoolClassFocusNode,
@@ -269,67 +318,136 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  focusNode: _universitySemesterFocusNode,
-                  controller: _universitySemesterController,
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(
-                    labelText: 'Semester (e.g., Semester 3)',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter the semester';
-                    }
-                    return null;
-                  },
-                  onFieldSubmitted: (_) {
-                    FocusScope.of(context).requestFocus(_dateFocusNode);
-                  },
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        focusNode: _universitySemesterFocusNode,
+                        value: _universitySemester,
+                        decoration: const InputDecoration(
+                          labelText: 'Semester',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _universitySemesters.map((String semester) {
+                          return DropdownMenuItem<String>(
+                            value: semester,
+                            child: Text(semester),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _universitySemester = value;
+                            FocusScope.of(context).requestFocus(_universityShiftFocusNode);
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Select semester';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        focusNode: _universityShiftFocusNode,
+                        value: _universityShift,
+                        decoration: const InputDecoration(
+                          labelText: 'Shift',
+                          border: OutlineInputBorder(),
+                        ),
+                        items: _universityShifts.map((String shift) {
+                          return DropdownMenuItem<String>(
+                            value: shift,
+                            child: Text(shift),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            _universityShift = value;
+                            FocusScope.of(context).requestFocus(_dateFocusNode);
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Select shift';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 16),
               ],
-              // Date Field
-              TextFormField(
-                focusNode: _dateFocusNode,
-                readOnly: true,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  border: OutlineInputBorder(),
-                ),
-                onTap: () => _selectDate(context),
-                controller: TextEditingController(
-                  text: _selectedDateTime != null
-                      ? DateFormat('MMM dd, yyyy').format(_selectedDateTime)
-                      : '',
-                ),
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_timeFocusNode);
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      focusNode: _dateFocusNode,
+                      readOnly: true,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      onTap: () => _selectDate(context),
+                      controller: TextEditingController(
+                        text: _selectedDateTime != null
+                            ? DateFormat('MMM dd, yyyy').format(_selectedDateTime)
+                            : '',
+                      ),
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_timeFocusNode);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      focusNode: _timeFocusNode,
+                      readOnly: true,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'Start Time',
+                        border: OutlineInputBorder(),
+                      ),
+                      onTap: () => _selectTime(context),
+                      controller: TextEditingController(
+                        text: _selectedDateTime != null
+                            ? DateFormat('hh:mm a').format(_selectedDateTime)
+                            : '',
+                      ),
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_endTimeFocusNode);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextFormField(
+                      focusNode: _endTimeFocusNode,
+                      readOnly: true,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(
+                        labelText: 'End Time',
+                        border: OutlineInputBorder(),
+                      ),
+                      onTap: () => _selectEndTime(context),
+                      controller: TextEditingController(
+                        text: _endDateTime != null
+                            ? DateFormat('hh:mm a').format(_endDateTime)
+                            : '',
+                      ),
+                      onFieldSubmitted: (_) {
+                        FocusScope.of(context).requestFocus(_roomFocusNode);
+                      },
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
-              // Time Field
-              TextFormField(
-                focusNode: _timeFocusNode,
-                readOnly: true,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
-                  labelText: 'Time',
-                  border: OutlineInputBorder(),
-                ),
-                onTap: () => _selectTime(context),
-                controller: TextEditingController(
-                  text: _selectedDateTime != null
-                      ? DateFormat('hh:mm a').format(_selectedDateTime)
-                      : '',
-                ),
-                onFieldSubmitted: (_) {
-                  FocusScope.of(context).requestFocus(_roomFocusNode);
-                },
-              ),
-              const SizedBox(height: 16),
-              // Room Field
               TextFormField(
                 focusNode: _roomFocusNode,
                 controller: _roomController,
@@ -349,7 +467,6 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
                 },
               ),
               const SizedBox(height: 16),
-              // Lecturer Field
               TextFormField(
                 focusNode: _lecturerFocusNode,
                 controller: _lecturerController,
@@ -369,7 +486,6 @@ class _UpdateScheduleBottomSheetState extends State<UpdateScheduleBottomSheet> {
                 },
               ),
               const SizedBox(height: 16),
-              // Topic Field
               TextFormField(
                 focusNode: _topicFocusNode,
                 controller: _topicController,

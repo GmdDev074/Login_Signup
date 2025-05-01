@@ -49,20 +49,6 @@ class _SubjectsViewState extends State<SubjectsView> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Subjects'),
-        backgroundColor: Colors.green.shade700,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, 'login');
-            },
-          ),
-        ],
-      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: StreamBuilder<List<Subject>>(

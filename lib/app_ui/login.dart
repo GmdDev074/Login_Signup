@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
 import '../controllers/login_controller.dart';
 
 class MyLogin extends StatefulWidget {
@@ -109,7 +108,7 @@ class _MyLoginState extends State<MyLogin> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next, // <-- THIS makes keyboard "Next" button active
+                      textInputAction: TextInputAction.next,
                       autocorrect: false,
                       enableSuggestions: true,
                       inputFormatters: [
@@ -193,7 +192,7 @@ class _MyLoginState extends State<MyLogin> {
                     ElevatedButton.icon(
                       onPressed: _isLoading ? null : _handleGoogleLogin,
                       icon: Image.asset(
-                        'assets/google_logo.png', // Add Google logo to assets
+                        'assets/google_logo.png',
                         height: 24,
                       ),
                       label: const Text('Sign in with Google'),

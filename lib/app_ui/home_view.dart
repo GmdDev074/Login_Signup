@@ -19,14 +19,12 @@ class _HomeViewState extends State<HomeView> {
   final HomeViewController _controller = HomeViewController();
   final User? user = FirebaseAuth.instance.currentUser;
 
-  // Method to get the subject name by ID
   Future<String> _getSubjectName(String subjectId) async {
     final subjects = await _controller.getSubjectsStream(user!.uid).first;
     final subject = subjects.firstWhere((subject) => subject.id == subjectId, orElse: () => Subject(id: '', name: 'Unknown', userId: user!.uid));
     return subject.name;
   }
 
-  // Method to fetch all schedules across all subjects
   Future<List<Schedule>> _fetchAllSchedules() async {
     final subjects = await _controller.getSubjectsStream(user!.uid).first;
     if (subjects.isEmpty) return [];
@@ -36,13 +34,11 @@ class _HomeViewState extends State<HomeView> {
       return schedules;
     }));
 
-    // Flatten the list of lists and sort by scheduledDateTime
     final flattenedSchedules = allSchedules.expand((x) => x).toList();
     flattenedSchedules.sort((a, b) => a.scheduledDateTime.compareTo(b.scheduledDateTime));
     return flattenedSchedules;
   }
 
-  // Method to delete a schedule
   Future<void> _deleteSchedule(String scheduleId, String subjectId) async {
     try {
       await _controller.deleteSchedule(user!.uid, subjectId, scheduleId);
@@ -53,7 +49,6 @@ class _HomeViewState extends State<HomeView> {
     }
   }
 
-  // Method to show the update bottom sheet
   Future<void> _showUpdateScheduleBottomSheet(Schedule schedule, String subjectName) async {
     await showModalBottomSheet(
       context: context,
@@ -65,7 +60,7 @@ class _HomeViewState extends State<HomeView> {
         schedule: schedule,
       ),
     );
-    setState(() {}); // Refresh the list after updating
+    setState(() {});
   }
 
   @override
@@ -78,25 +73,10 @@ class _HomeViewState extends State<HomeView> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Schedule'),
-        backgroundColor: Colors.green.shade700,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushReplacementNamed(context, 'login');
-            },
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Subjects Section (User-added subjects in a horizontally scrollable row)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -144,7 +124,7 @@ class _HomeViewState extends State<HomeView> {
                       }
 
                       return SizedBox(
-                        height: 140, // Fixed height to accommodate wrapped text
+                        height: 140,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           itemCount: subjects.length,
@@ -172,10 +152,10 @@ class _HomeViewState extends State<HomeView> {
                                   );
                                 },
                                 child: Container(
-                                  width: 100, // Fixed width for all cards
-                                  height: 140, // Fixed height for all cards
+                                  width: 100,
+                                  height: 140,
                                   child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.start, // Align content from the top
+                                    mainAxisAlignment: MainAxisAlignment.start,
                                     crossAxisAlignment: CrossAxisAlignment.center,
                                     children: [
                                       Container(
@@ -200,8 +180,8 @@ class _HomeViewState extends State<HomeView> {
                                       Text(
                                         subject.name,
                                         textAlign: TextAlign.center,
-                                        maxLines: 2, // Allow wrapping to 2 lines
-                                        overflow: TextOverflow.ellipsis, // Handle overflow with ellipsis
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
                                         style: const TextStyle(
                                           fontSize: 14,
                                         ),
@@ -219,7 +199,6 @@ class _HomeViewState extends State<HomeView> {
                 ],
               ),
             ),
-            // Your Schedule Section (All schedules in a vertical list)
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
@@ -287,7 +266,7 @@ class _HomeViewState extends State<HomeView> {
                                   confirmDismiss: (direction) async {
                                     if (direction == DismissDirection.startToEnd) {
                                       await _showUpdateScheduleBottomSheet(schedule, subjectName);
-                                      return false; // Prevent dismissal after editing
+                                      return false;
                                     } else if (direction == DismissDirection.endToStart) {
                                       return await showDialog(
                                         context: context,
@@ -340,7 +319,7 @@ class _HomeViewState extends State<HomeView> {
                                         children: [
                                           Text(schedule.lecturer),
                                           const SizedBox(height: 4),
-                                          Text('${schedule.date} at ${schedule.time}'),
+                                          Text('${schedule.date} from ${schedule.time} to ${schedule.endTime}'),
                                           Text('Room: ${schedule.room}'),
                                           if (schedule.topic.isNotEmpty)
                                             Text('Topic: ${schedule.topic}'),
@@ -353,6 +332,8 @@ class _HomeViewState extends State<HomeView> {
                                               Text('Department: ${schedule.universityDepartment}'),
                                             if (schedule.universitySemester != null)
                                               Text('Semester: ${schedule.universitySemester}'),
+                                            if (schedule.universityShift != null)
+                                              Text('Shift: ${schedule.universityShift}'),
                                           ],
                                         ],
                                       ),
