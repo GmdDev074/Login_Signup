@@ -10,6 +10,13 @@ import 'package:Lecture_Scheduler/app_ui/main_screen.dart';
 import 'package:Lecture_Scheduler/app_ui/splash_screen.dart';
 import 'package:Lecture_Scheduler/services/notification_service.dart';
 
+import 'app_ui/contact_us_view.dart';
+import 'app_ui/how_to_use_view.dart';
+import 'app_ui/privacy_policy_view.dart';
+import 'app_ui/rate_us_view.dart';
+import 'app_ui/support_view.dart';
+import 'app_ui/terms_and_conditions_view.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
@@ -56,6 +63,12 @@ class MyApp extends StatelessWidget {
         'register': (context) => const MyRegister(),
         'forgot_password': (context) => const MyForgotPassword(),
         'main': (context) => const MainScreen(),
+        '/privacy_policy': (context) => const PrivacyPolicyView(),
+        '/terms_and_conditions': (context) => const TermsAndConditionsView(),
+        '/rate_us': (context) => const RateUsView(),
+        '/support': (context) => const SupportView(),
+        '/contact_us': (context) => const ContactUsView(),
+        '/how_to_use': (context) => const HowToUseView(),
       },
     );
   }

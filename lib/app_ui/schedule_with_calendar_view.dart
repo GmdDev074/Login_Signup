@@ -50,14 +50,14 @@ class DashedLineVertical extends StatelessWidget {
   }
 }
 
-class ListenView extends StatefulWidget {
-  const ListenView({super.key});
+class ScheduleWithCalendarViewView extends StatefulWidget {
+  const ScheduleWithCalendarViewView({super.key});
 
   @override
-  State<ListenView> createState() => _ListenViewState();
+  State<ScheduleWithCalendarViewView> createState() => _ListenViewState();
 }
 
-class _ListenViewState extends State<ListenView> {
+class _ListenViewState extends State<ScheduleWithCalendarViewView> {
   final HomeViewController _controller = HomeViewController();
   final User? user = FirebaseAuth.instance.currentUser;
   DateTime _selectedDate = DateTime.now();
