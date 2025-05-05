@@ -7,9 +7,15 @@ class SupportView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Support'),
-        backgroundColor: Colors.green.shade700,
+        title: const Text('Support',
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),),
+        backgroundColor: Colors.black,
         leading: IconButton(
+          color: Colors.white,
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),

@@ -1,3 +1,7 @@
+import 'package:Lecture_Scheduler/app_ui/privacy_policy_view.dart';
+import 'package:Lecture_Scheduler/app_ui/rate_us_view.dart';
+import 'package:Lecture_Scheduler/app_ui/support_view.dart';
+import 'package:Lecture_Scheduler/app_ui/terms_and_conditions_view.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:Lecture_Scheduler/app_ui/home_view.dart';
@@ -7,7 +11,10 @@ import 'package:Lecture_Scheduler/app_ui/subjects_view.dart';
 import 'package:flutter/services.dart';
 import '../controllers/login_controller.dart';
 import '../controllers/profile_controller.dart';
-import 'dart:io'; // For SystemNavigator.pop()
+import 'dart:io';
+
+import 'contact_us_view.dart';
+import 'how_to_use_view.dart'; // For SystemNavigator.pop()
 
 class UserModel {
   final String name;
@@ -59,6 +66,20 @@ class DrawerStateManager {
   }
 }
 
+// Custom fade transition
+class FadePageRoute<T> extends MaterialPageRoute<T> {
+  FadePageRoute({required WidgetBuilder builder}) : super(builder: builder);
+
+  @override
+  Widget buildTransitions(BuildContext context, Animation<double> animation,
+      Animation<double> secondaryAnimation, Widget child) {
+    return FadeTransition(
+      opacity: animation,
+      child: child,
+    );
+  }
+}
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -87,15 +108,15 @@ class _MainScreenState extends State<MainScreen> {
   String get _appBarTitle {
     switch (_selectedIndex) {
       case 0:
-        return 'Schedule';
+        return 'Subjects & Schedules';
       case 1:
-        return 'Schedule';
+        return 'Schedules';
       case 2:
         return 'Subjects';
       case 3:
         return 'Profile';
       default:
-        return 'Schedule';
+        return 'Subjects & Schedules';
     }
   }
 
@@ -191,14 +212,23 @@ class _MainScreenState extends State<MainScreen> {
         key: _scaffoldKey,
         appBar: AppBar(
           leading: IconButton(
+            color: Colors.white,
             icon: const Icon(Icons.menu),
             onPressed: _drawerManager.openDrawer,
           ),
-          backgroundColor: Colors.green.shade700,
-          title: Text(_appBarTitle),
+          backgroundColor: Colors.black,
+          title: Text(
+            _appBarTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
           actions: [
             if (_selectedIndex == 3)
               IconButton(
+                color: Colors.white,
                 icon: const Icon(Icons.logout),
                 onPressed: () async {
                   await loginController.logout(context);
@@ -208,12 +238,13 @@ class _MainScreenState extends State<MainScreen> {
         ),
         drawer: Drawer(
           width: MediaQuery.of(context).size.width * 0.85,
+          //backgroundColor: Colors.black, // Match app theme
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
               DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.green.shade700,
+                decoration: const BoxDecoration(
+                  color: Colors.black,
                 ),
                 child: Row(
                   children: [
@@ -241,51 +272,111 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
               ListTile(
-                leading: const Icon(Icons.privacy_tip),
-                title: const Text('Privacy Policy'),
+                leading: const Icon(Icons.privacy_tip,
+                  color: Colors.black),
+                title: const Text('Privacy Policy',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),),
                 onTap: () {
                   _drawerManager.closeDrawer(context);
-                  Navigator.pushNamed(context, '/privacy_policy');
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      builder: (context) => const PrivacyPolicyView(),
+                    ),
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.description),
-                title: const Text('Terms and Conditions'),
+                leading: const Icon(Icons.description,
+                    color: Colors.black),
+                title: const Text('Terms and Conditions',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),),
                 onTap: () {
                   _drawerManager.closeDrawer(context);
-                  Navigator.pushNamed(context, '/terms_and_conditions');
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      builder: (context) => const TermsAndConditionsView(),
+                    ),
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.star),
-                title: const Text('Rate Us'),
+                leading: const Icon(Icons.star,
+                    color: Colors.black),
+                title: const Text('Rate Us',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),),
                 onTap: () {
                   _drawerManager.closeDrawer(context);
-                  Navigator.pushNamed(context, '/rate_us');
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      builder: (context) => const RateUsView(),
+                    ),
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.support),
-                title: const Text('Support'),
+                leading: const Icon(Icons.support,
+                    color: Colors.black),
+                title: const Text('Support',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),),
                 onTap: () {
                   _drawerManager.closeDrawer(context);
-                  Navigator.pushNamed(context, '/support');
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      builder: (context) => const SupportView(),
+                    ),
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.contact_mail),
-                title: const Text('Contact Us'),
+                leading: const Icon(Icons.contact_mail,
+                    color: Colors.black),
+                title: const Text('Contact Us',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),),
                 onTap: () {
                   _drawerManager.closeDrawer(context);
-                  Navigator.pushNamed(context, '/contact_us');
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      builder: (context) => const ContactUsView(),
+                    ),
+                  );
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.help),
-                title: const Text('How to Use'),
+                leading: const Icon(Icons.help,
+                    color: Colors.black),
+                title: const Text('How to Use',
+                  style: const TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                  ),),
                 onTap: () {
                   _drawerManager.closeDrawer(context);
-                  Navigator.pushNamed(context, '/how_to_use');
+                  Navigator.push(
+                    context,
+                    FadePageRoute(
+                      builder: (context) => const HowToUseView(),
+                    ),
+                  );
                 },
               ),
             ],
@@ -298,7 +389,7 @@ class _MainScreenState extends State<MainScreen> {
             height: 60,
             decoration: BoxDecoration(
               color: Colors.black87,
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(10),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.3),
@@ -315,11 +406,8 @@ class _MainScreenState extends State<MainScreen> {
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(
-                    Icons.schedule,
-                    color: _selectedIndex == 1 ? Colors.white : Colors.grey,
-                  ),
-                  label: 'Schedule',
-                  backgroundColor: _selectedIndex == 1 ? Colors.green.shade700 : Colors.transparent,
+                    Icons.schedule),
+                  label: 'Schedule'
                 ),
                 const BottomNavigationBarItem(
                   icon: Icon(Icons.subject),
