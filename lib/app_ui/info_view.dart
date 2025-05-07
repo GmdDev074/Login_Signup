@@ -3,38 +3,44 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/login_controller.dart';
 import '../models/register_model.dart';
+import 'profile_update_bottom_sheet.dart';
 
-class InfoView extends StatelessWidget {
+class InfoView extends StatefulWidget {
   const InfoView({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final User? user = FirebaseAuth.instance.currentUser;
-    final ProfileController profileController = ProfileController();
-    final LoginController loginController = LoginController();
+  State<InfoView> createState() => _InfoViewState();
+}
 
+class _InfoViewState extends State<InfoView> {
+  final User? user = FirebaseAuth.instance.currentUser;
+  final ProfileController profileController = ProfileController();
+  final LoginController loginController = LoginController();
+
+  @override
+  void initState() {
+    super.initState();
     if (user == null) {
-      // If no user is logged in, redirect to login
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacementNamed(context, 'login');
       });
+    }
+  }
+
+  // Method to refresh the data
+  void _refreshData() {
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (user == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      /*appBar: AppBar(
-        backgroundColor: Colors.green.shade700,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await loginController.logout(context);
-            },
-          ),
-        ],
-      ),*/
       body: FutureBuilder<UserModel?>(
-        future: profileController.getUserData(user.uid),
+        future: profileController.getUserData(user!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -50,40 +56,171 @@ class InfoView extends StatelessWidget {
 
           final userData = snapshot.data!;
 
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.info, size: 100, color: Colors.green),
-                const SizedBox(height: 20),
-                const Text(
-                  'App Information',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          return Stack(
+            children: [
+              // Teal background shape at the top
+              ClipPath(
+                clipper: CustomShapeClipper(),
+                child: Container(
+                  height: 200,
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF4CAF50), Color(0xFF81C784)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const SizedBox(height: 10),
+                        CircleAvatar(
+                          radius: 40,
+                          backgroundColor: Colors.orange,
+                          child: Icon(
+                            Icons.person,
+                            size: 50,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Version: 1.0.0\nDeveloped by: Your Team',
-                  style: TextStyle(fontSize: 18),
-                  textAlign: TextAlign.center,
+              ),
+              // Centered user information and profile update view
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 150),
+                  child: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.9, // Responsive width
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.person, color: Colors.black, size: 30),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      userData.name,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.phone, color: Colors.black, size: 30),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      userData.number,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.email, color: Colors.black, size: 30),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Text(
+                                      userData.email,
+                                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          // Profile Update View
+                          Card(
+                            elevation: 4,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: ListTile(
+                              leading: const Icon(Icons.edit, color: Colors.black),
+                              title: const Text(
+                                'Update Profile',
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              onTap: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (context) => ProfileUpdateBottomSheet(
+                                    userId: userData.uid,
+                                    user: userData,
+                                    onProfileUpdated: _refreshData, // Pass refresh callback
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 30),
-                const Text(
-                  'User Information',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Name: ${userData.name}\n'
-                      'Email: ${userData.email}\n'
-                      'Phone: ${userData.number}',
-                  style: const TextStyle(fontSize: 18),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),
     );
   }
+}
+
+// Custom clipper for the teal background shape
+class CustomShapeClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final Path path = Path();
+    path.lineTo(0, size.height - 50);
+    path.quadraticBezierTo(size.width / 2, size.height, size.width, size.height - 50);
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }
