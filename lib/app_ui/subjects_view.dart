@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/subjects_view_controller.dart';
 import '../models/subject_model.dart';
+import '../shimmer_effect_ui/shimmer_effect.dart';
 import 'add_subject_bottom_sheet.dart';
 import 'add_schedule_bottom_sheet.dart';
 
@@ -58,7 +59,16 @@ class _SubjectsViewState extends State<SubjectsView> {
               return Center(child: Text('Error: ${snapshot.error}'));
             }
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              // Show shimmer effect while loading
+              return ListView.separated(
+                itemCount: 10, // Show 3 shimmer placeholders
+                separatorBuilder: (context, index) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  return ShimmerEffect(
+                    height: 80, // Match the card height
+                  );
+                },
+              );
             }
 
             final subjects = snapshot.data ?? [];

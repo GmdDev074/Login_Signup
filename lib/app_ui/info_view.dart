@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/login_controller.dart';
 import '../models/register_model.dart';
+import '../shimmer_effect_ui/shimmer_effect.dart';
 import 'profile_update_bottom_sheet.dart';
 
 class InfoView extends StatefulWidget {
@@ -43,7 +44,18 @@ class _InfoViewState extends State<InfoView> {
         future: profileController.getUserData(user!.uid),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView(
+              padding: const EdgeInsets.only(top: 150),
+              children: [
+                ShimmerEffect(height: 100),
+                const SizedBox(height: 10),
+                ShimmerEffect(height: 100),
+                const SizedBox(height: 10),
+                ShimmerEffect(height: 100),
+                const SizedBox(height: 10),
+                ShimmerEffect(height: 100),
+              ],
+            );
           }
 
           if (snapshot.hasError) {

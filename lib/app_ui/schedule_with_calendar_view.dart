@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../controllers/home_view_controller.dart';
 import '../models/schedule_model.dart';
 import '../models/subject_model.dart';
+import '../shimmer_effect_ui/shimmer_effect_schedule.dart';
 import 'update_schedule_bottom_sheet.dart';
 
 // Helper widget to draw a vertical dashed line for the timeline
@@ -265,7 +266,19 @@ class _ListenViewState extends State<ScheduleWithCalendarViewView> {
                   return Center(child: Text('Error: ${snapshot.error}'));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  // Show shimmer effect while loading with proper vertical margins
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: 6, // Reduced to 3 shimmer placeholders for better spacing
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16), // Match the Card margin
+                        child: ShimmerEffectSchedule(
+                          height: 120, // Match the schedule card height
+                        ),
+                      );
+                    },
+                  );
                 }
 
                 final schedules = snapshot.data ?? [];

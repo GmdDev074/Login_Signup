@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../controllers/home_view_controller.dart';
 import '../models/subject_model.dart';
 import '../models/schedule_model.dart';
+import '../shimmer_effect_ui/shimmer_effect_home.dart';
 import 'add_schedule_bottom_sheet.dart';
 import 'add_subject_bottom_sheet.dart';
 import 'update_schedule_bottom_sheet.dart';
@@ -114,7 +115,23 @@ class _HomeViewState extends State<HomeView> {
                         return Center(child: Text('Error: ${snapshot.error}'));
                       }
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        // Show shimmer effect for subjects
+                        return SizedBox(
+                          height: 140,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: 3, // Show 3 shimmer placeholders
+                            itemBuilder: (context, index) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 16.0),
+                                child: ShimmerEffectHome(
+                                  height: 140,
+                                  width: 100,
+                                ),
+                              );
+                            },
+                          ),
+                        );
                       }
 
                       final subjects = snapshot.data ?? [];
@@ -219,7 +236,20 @@ class _HomeViewState extends State<HomeView> {
                         return Center(child: Text('Error: ${scheduleSnapshot.error}'));
                       }
                       if (scheduleSnapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
+                        // Show shimmer effect for schedules
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 3, // Show 3 shimmer placeholders
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16.0),
+                              child: ShimmerEffectHome(
+                                height: 120, // Approximate height of schedule card
+                              ),
+                            );
+                          },
+                        );
                       }
 
                       final allSchedules = scheduleSnapshot.data ?? [];
