@@ -387,7 +387,7 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
         drawer: SizedBox(
-          width: MediaQuery.of(context).size.width * 0.8, //More then half screen width
+          width: MediaQuery.of(context).size.width * (isWebOrDesktop ? 0.3 : 0.8), //80% for mobile and 30% for the desktop or web
           child: _buildDrawerContent(context),
         ),
         body: isWebOrDesktop
