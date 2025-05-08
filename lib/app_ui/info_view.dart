@@ -47,13 +47,33 @@ class _InfoViewState extends State<InfoView> {
             return ListView(
               padding: const EdgeInsets.only(top: 150),
               children: [
-                ShimmerEffect(height: 100),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.05, // 5% margin on each side
+                  ),
+                  child: ShimmerEffect(height: 100),
+                ),
                 const SizedBox(height: 10),
-                ShimmerEffect(height: 100),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.05,
+                  ),
+                  child: ShimmerEffect(height: 100),
+                ),
                 const SizedBox(height: 10),
-                ShimmerEffect(height: 100),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.05,
+                  ),
+                  child: ShimmerEffect(height: 100),
+                ),
                 const SizedBox(height: 10),
-                ShimmerEffect(height: 100),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: MediaQuery.of(context).size.width * 0.05,
+                  ),
+                  child: ShimmerEffect(height: 100),
+                ),
               ],
             );
           }

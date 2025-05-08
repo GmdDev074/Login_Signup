@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:Lecture_Scheduler/app_ui/login.dart';
 import 'package:Lecture_Scheduler/app_ui/register.dart';
 import 'package:Lecture_Scheduler/app_ui/forgot_password.dart';
 import 'package:Lecture_Scheduler/app_ui/main_screen.dart';
 import 'package:Lecture_Scheduler/app_ui/splash_screen.dart';
 import 'package:Lecture_Scheduler/services/notification_service.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 import 'app_ui/contact_us_view.dart';
 import 'app_ui/how_to_use_view.dart';
@@ -17,9 +16,53 @@ import 'app_ui/rate_us_view.dart';
 import 'app_ui/support_view.dart';
 import 'app_ui/terms_and_conditions_view.dart';
 
+// FirebaseOptions for your project
+const firebaseOptions = FirebaseOptions(
+  apiKey: "AIzaSyAHXifepGZtrkRkeBhohsexTgK1An54EXM",
+  appId: "1:999445788579:android:26a9e5c575300eb2434c16",
+  messagingSenderId: "999445788579",
+  projectId: "flutter-app-26cac",
+  authDomain: "flutter-app-26cac.firebaseapp.com",
+  storageBucket: "flutter-app-26cac.appspot.com",
+);
+
+// Singleton class to manage Firebase initialization
+class FirebaseInitializer {
+  static bool _isInitialized = false;
+
+  static Future<void> initialize() async {
+    if (_isInitialized) {
+      print('Firebase already initialized, skipping...');
+      return;
+    }
+
+    try {
+      print('Initializing Firebase...');
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(options: firebaseOptions);
+      }
+      print('Firebase initialized successfully.');
+      _isInitialized = true;
+    } catch (e) {
+      print('Error initializing Firebase: $e');
+      if (e.toString().contains('duplicate-app')) {
+        print('Firebase app "[DEFAULT]" already exists, using existing instance.');
+        _isInitialized = true; // Proceed with existing app
+      } else {
+        rethrow; // Rethrow other errors
+      }
+    }
+  }
+}
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  // Preserve native splash screen until Flutter is ready
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+
+  // Initialize Firebase with singleton
+  await FirebaseInitializer.initialize();
+
   //await NotificationService.initialize();
   //await NotificationService.requestPermissions(); // Optional, for Android 13+
   //await NotificationService.requestBatteryOptimizationExemption();  // battery optimization
@@ -36,27 +79,14 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  Future<bool> _checkLoginStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    // Also check Firebase auth state
-    return isLoggedIn && FirebaseAuth.instance.currentUser != null;
-  }
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: FutureBuilder<bool>(
-        future: _checkLoginStatus(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SplashScreen();
-          }
-          final isLoggedIn = snapshot.data ?? false;
-          return isLoggedIn ? const MainScreen() : const MyLogin();
-        },
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.white, // app background colour
       ),
+      home: const SplashScreen(),
       routes: {
         'splash': (context) => const SplashScreen(),
         'login': (context) => const MyLogin(),

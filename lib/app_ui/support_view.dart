@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class SupportView extends StatelessWidget {
@@ -77,6 +78,10 @@ class SupportView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -88,76 +93,118 @@ class SupportView extends StatelessWidget {
           ),
         ),
         backgroundColor: Colors.black,
-        leading: IconButton(
+        leading: Navigator.canPop(context)
+            ? IconButton(
           color: Colors.white,
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
+        )
+            : null,
+      ),
+      body: isMobile ? _buildMobileView() : _buildWebDesktopView(),
+    );
+  }
+
+  Widget _buildMobileView() {
+    return Container(
+      color: Colors.white,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Support',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: faqs.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 16),
+              itemBuilder: (context, index) {
+                return Card(
+                  color: Colors.white,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(color: Colors.white, width: 2),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          faqs[index]['question']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                        const Divider(color: Colors.black),
+                        Text(
+                          faqs[index]['answer']!,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'For further assistance, please visit our Contact Us page.',
+              style: TextStyle(fontSize: 16, color: Colors.black),
+            ),
+          ],
         ),
       ),
-      body: Container(
-        color: Colors.white, // Set background color to white
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Support',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+    );
+  }
+
+  Widget _buildWebDesktopView() {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 800),
+        padding: const EdgeInsets.all(32),
+        child: ListView.separated(
+          itemCount: faqs.length,
+          separatorBuilder: (context, index) => const SizedBox(height: 20),
+          itemBuilder: (context, index) {
+            return Card(
+              elevation: 5,
+              color: Colors.grey[50],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: ExpansionTile(
+                title: Text(
+                  faqs[index]['question']!,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
-              ),
-              const SizedBox(height: 16),
-              // Use ListView to display each FAQ in a card
-              ListView.separated(
-                shrinkWrap: true, // Ensure the ListView takes only the space it needs
-                physics: const NeverScrollableScrollPhysics(), // Disable scrolling for the ListView (SingleChildScrollView handles it)
-                itemCount: faqs.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  return Card(
-                    color: Colors.white, // Set card color to white
-                    elevation: 4, // Add elevation for shadow effect
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: Colors.white, width: 2),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      faqs[index]['answer']!,
+                      style: const TextStyle(fontSize: 16),
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            faqs[index]['question']!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
-                          ),
-                          const Divider(color: Colors.black),
-                          Text(
-                            faqs[index]['answer']!,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.black, // Match the color from the image
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'For further assistance, please visit our Contact Us page.',
-                style: TextStyle(fontSize: 16, color: Colors.black),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

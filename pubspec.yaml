@@ -49,6 +49,7 @@ dev_dependencies:
   timezone: ^0.9.2
   permission_handler: ^11.0.0
   shimmer: ^2.0.0
+  flutter_native_splash: ^2.4.1  #Configure a native splash screen using the flutter_native_splash package, which displays an image or color instantly when the app launches, replacing the default white screen.
 
 
   # The "flutter_lints" package below contains a set of recommended lints to
